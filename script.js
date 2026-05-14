@@ -63,7 +63,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentRotation = 0;
     let isSpinning = false;
 
-    spinBtn.addEventListener("click", () => {
+    // Google Apps Script Web App URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbwPPS3XIaLFNizDlIf86Y9vJ2eHyIyY5gWnObCMWL30gx0WnmCYh5Hg5Fd3TGbFiDWH2A/exec";
+
+    spinBtn.addEventListener("click", async () => {
         if (isSpinning) return;
 
         // If already drawn, just show the result again without spinning
@@ -75,35 +78,98 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        if (!API_URL) {
+            alert("系統尚未綁定 Google 試算表，無法抽獎！");
+            return;
+        }
+
         isSpinning = true;
         spinBtn.disabled = true;
 
-        // Random prize index (0 to 5)
-        const winningIndex = Math.floor(Math.random() * sliceCount);
+        // 1. 開始預備旋轉（讓使用者覺得已經在抽獎了，隱藏連線延遲）
+        const durationPerSpin = 600; // 每圈 0.6 秒
+        const spinAnim = wheel.animate([
+            { transform: `rotate(${currentRotation}deg)` },
+            { transform: `rotate(${currentRotation + 360}deg)` }
+        ], {
+            duration: durationPerSpin,
+            iterations: Infinity,
+            easing: 'linear'
+        });
+
+        let winningIndex = 0;
+        let fetchError = false;
+
+        try {
+            // 2. 背景非同步呼叫 Google API
+            const response = await fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "spin" }),
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                }
+            });
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // 判斷抽中什麼
+            if (data.prize === "下午茶組") {
+                winningIndex = 1;
+            } else {
+                winningIndex = 0;
+            }
+
+        } catch (error) {
+            console.error("Fetch API error:", error);
+            fetchError = true;
+        }
+
+        // 3. 抓取目前動畫跑到哪裡，然後停止無窮動畫
+        const playTime = spinAnim.currentTime || 0;
+        spinAnim.cancel();
+
+        // 算出目前確切的角度，避免視覺跳動
+        currentRotation = currentRotation + ((playTime % durationPerSpin) / durationPerSpin) * 360;
         
-        // Save to localStorage immediately so they can't refresh to try again
+        // 暫時關閉 CSS transition，並把輪盤鎖定在當前角度
+        wheel.style.transition = 'none';
+        wheel.style.transform = `rotate(${currentRotation}deg)`;
+        
+        // 強制瀏覽器重新渲染一次 (reflow)
+        wheel.offsetHeight; 
+
+        if (fetchError) {
+            alert("網路連線異常，請確認網路狀態後重試！");
+            isSpinning = false;
+            spinBtn.disabled = false;
+            return;
+        }
+        
+        // 4. 記錄抽獎狀態
         localStorage.setItem('hasDrawn', 'true');
         localStorage.setItem('savedPrizeIndex', winningIndex.toString());
         
-        // Calculate rotation needed
-        const spins = 5; // Base spins
-        const degreesPerSpin = 360;
-        
-        // Target angle points to top (0deg)
+        // 5. 設定最終減速停止的角度
+        const spins = 4; // 額外轉 4 圈作為減速
         const centerAngle = (winningIndex * sliceAngle) + (sliceAngle / 2);
-        const targetRotation = currentRotation + (spins * degreesPerSpin) + (360 - (currentRotation % 360)) + (360 - centerAngle);
+        const targetRotation = currentRotation + (spins * 360) + (360 - (currentRotation % 360)) + (360 - centerAngle);
 
         currentRotation = targetRotation;
         
+        // 重啟 CSS transition 來做完美的減速動畫
+        wheel.style.transition = 'transform 4s cubic-bezier(0.1, 0.8, 0.1, 1)';
         wheel.style.transform = `rotate(${currentRotation}deg)`;
 
-        // Wait for transition to complete
+        // 等待減速動畫完成後跳出視窗
         setTimeout(() => {
             isSpinning = false;
             spinBtn.disabled = false;
             btnText.innerText = "查看中獎結果";
             showResult(prizes[winningIndex]);
-        }, 4000); // matches CSS transition 4s
+        }, 4000);
     });
 
     let currentPrizeUrl = '';
