@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>幸運大轉盤 - 專屬好禮等你抽</title>
+    <meta name="description" content="好運降臨！快來試試你的手氣，蘇打餅與下午茶組等你帶回家！">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Background elements for festive vibe -->
+        <div class="light-rays"></div>
+
+        <header class="header">
+            <div class="title-banner">幸運抽獎活動</div>
+            <h1 class="main-title">試試手氣！</h1>
+            <p class="subtitle">蘇打餅 & 下午茶組大放送</p>
+        </header>
+
+        <main class="wheel-section">
+            <div class="wheel-wrapper">
+                <!-- Outer decoration -->
+                <div class="wheel-border"></div>
+                <!-- Pointer -->
+                <div class="pointer">
+                    <div class="pointer-inner"></div>
+                </div>
+                <!-- The Wheel -->
+                <div class="wheel" id="wheel">
+                    <!-- Slices rendered by JS -->
+                </div>
+            </div>
+
+            <button class="spin-btn" id="spin-btn">
+                <span class="btn-text">開始抽獎</span>
+            </button>
+        </main>
+    </div>
+
+    <!-- Result Modal -->
+    <div class="modal hidden" id="result-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="close-btn" id="close-modal">&times;</button>
+            <div class="result-image-wrapper">
+                <img id="result-image" src="" alt="恭喜中獎！">
+            </div>
+            <!-- If image is missing, show fallback text -->
+            <div class="fallback-text hidden" id="fallback-text">
+                <h2>恭喜獲得</h2>
+                <h1 id="fallback-prize-name"></h1>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="save-btn" id="save-btn">儲存照片</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
